@@ -7,7 +7,8 @@ This project starts a [Kubernetes](https://kubernetes.io) cluster with:
 - a multi-replica [Kafka](https://kafka.apache.org) stateful set in kraft mode
 - a kafka producer that creates events for people moving through various rooms in a building
 - an [Apollo](https://apollographql.com) graphql server with subscriptions to kafka topics
-- a [NextJS](https://nextjs.org)/[D3](https://d3js.org) dashboard that visualizes the real-time events
+- a [NextJS](https://nextjs.org) dashboard that visualizes the real-time events
+- all resources running in a [Minikube](https://minikube.sigs.k8s.io/docs) kubernetes cluster
 
 ### Steps to start the cluster
 
