@@ -1,8 +1,0 @@
-{
-  "private": true,
-  "main": "index.js",
-  "scripts": {
-    "preinstall": "npx -y only-allow npm",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  }
-}

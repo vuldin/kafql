@@ -1,4 +1,4 @@
-const { gql } = require('apollo-server-express')
+const { gql } = require('graphql-tag')
 
 export default gql`
   type User {

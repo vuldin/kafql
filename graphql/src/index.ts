@@ -1,61 +1,43 @@
-import express from 'express'
-import { ApolloServer } from 'apollo-server-express'
-import {
-  ApolloServerPluginDrainHttpServer,
-  ApolloServerPluginLandingPageGraphQLPlayground,
-} from 'apollo-server-core'
-import { SubscriptionServer } from 'subscriptions-transport-ws'
-import { createServer } from 'http'
+import http from 'http'
+import { GRAPHQL_TRANSPORT_WS_PROTOCOL } from 'graphql-ws'
+import { GRAPHQL_WS, SubscriptionServer } from 'subscriptions-transport-ws'
+import { Socket } from 'net'
+import { WebSocketServer } from 'ws'
 import { execute, subscribe } from 'graphql'
 import { makeExecutableSchema } from '@graphql-tools/schema'
+import { useServer } from 'graphql-ws/lib/use/ws'
 
 import models from './models'
 import resolvers from './resolvers'
 import typeDefs from './typeDefs'
 
 const port = 4000
+const path = '/'
+const schema = makeExecutableSchema({ typeDefs, resolvers })
 
-async function main() {
-  const app = express()
-  const httpServer = createServer(app)
+//const graphqlWs = new WebSocketServer({ port, path })
+const graphqlWs = new WebSocketServer({ noServer: true })
+useServer({ context: () => ({ models }), schema }, graphqlWs)
 
-  const schema = makeExecutableSchema({ typeDefs, resolvers })
+const subTransWs = new WebSocketServer({ noServer: true })
+SubscriptionServer.create({ schema, execute, subscribe }, subTransWs)
 
-  const server = new ApolloServer({
-    schema,
-    context: () => ({ models }),
-    plugins: [
-      ApolloServerPluginDrainHttpServer({ httpServer }),
-      ApolloServerPluginLandingPageGraphQLPlayground(),
-      {
-        async serverWillStart() {
-          return {
-            async drainServer() {
-              subscriptionServer.close()
-            },
-          }
-        },
-      },
-    ],
+const server = http.createServer(function weServeSocketsOnly(_, res) {
+  res.writeHead(404)
+  res.end()
+})
+
+// decide which websocket server to use
+server.on('upgrade', (req, socket, head) => {
+  const protocol = req.headers['sec-websocket-protocol']
+  const protocols = Array.isArray(protocol) ? protocol : protocol?.split(',').map((p) => p.trim())
+  const wss =
+    protocols?.includes(GRAPHQL_WS) && !protocols.includes(GRAPHQL_TRANSPORT_WS_PROTOCOL)
+      ? subTransWs
+      : graphqlWs
+  wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+    wss.emit('connection', ws, req)
   })
+})
 
-  await server.start()
-  server.applyMiddleware({ app, path: '/' })
-
-  const subscriptionServer = SubscriptionServer.create(
-    {
-      schema,
-      execute,
-      subscribe,
-    },
-    {
-      server: httpServer,
-      path: server.graphqlPath,
-    }
-  )
-
-  await new Promise<void>((resolve) => httpServer.listen({ port }, resolve))
-  console.log(`🚀 Server ready at {http|ws}://localhost:${port}${server.graphqlPath}`)
-}
-
-void main()
+server.listen(4000)
