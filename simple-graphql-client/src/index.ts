@@ -9,7 +9,7 @@ const client = createClient({
   url,
   webSocketImpl: ws,
   retryWait: async function retry() {
-    printReconnecting()
+    printReconnecting(url)
     await setTimeout(2000)
   },
   isFatalConnectionProblem: () => false,

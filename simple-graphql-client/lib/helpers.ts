@@ -49,7 +49,7 @@ export function getExecuteFunction(client: Client) {
 
 const vals = ['|', '/', '-', '\\']
 let num = 0
-export function printReconnecting() {
-  process.stdout.write(`reconnecting... ${vals[num % vals.length]}\r`)
+export function printReconnecting(url: string) {
+  process.stdout.write(`connecting to ${url}... ${vals[num % vals.length]}\r`)
   num += 1
 }
