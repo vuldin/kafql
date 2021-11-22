@@ -46,3 +46,10 @@ export function getExecuteFunction(client: Client) {
     }
   }
 }
+
+const vals = ['|', '/', '-', '\\']
+let num = 0
+export function printReconnecting() {
+  process.stdout.write(`reconnecting... ${vals[num % vals.length]}\r`)
+  num += 1
+}
