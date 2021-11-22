@@ -1,54 +1,24 @@
 import ws from 'ws'
 import { createClient } from 'graphql-ws'
 
-const client = createClient({
-  url: 'ws://localhost:4000/',
-  webSocketImpl: ws,
-})
+import { getExecuteFunction } from '../lib/helpers'
 
-// query
+const url = 'ws://localhost:4000/'
+
+const client = createClient({ url, webSocketImpl: ws })
+
+const execute = getExecuteFunction(client)
+
+const query = 'subscription { userMoved { userId longitude }}'
+//const query = 'query { hello }'
+
 ;(async () => {
-  const result = await new Promise((resolve, reject) => {
-    let result: any
-    client.subscribe(
-      {
-        query: '{ hello }',
-      },
-      {
-        next: (data) => (result = data),
-        error: reject,
-        complete: () => resolve(result),
-      }
-    )
-  })
-
-  console.log(result)
-})()
-
-// subscription
-;(async () => {
-  const onNext = (d: any) => {
-    console.log(d)
-  }
-
-  let unsubscribe = () => {
-    /* complete the subscription */
-  }
-
   try {
-    await new Promise((resolve: any, reject) => {
-      unsubscribe = client.subscribe(
-        {
-          query: 'subscription { userMoved { userId longitude }}',
-        },
-        {
-          next: onNext,
-          error: reject,
-          complete: resolve,
-        }
-      )
-    })
-  } catch (e) {
-    console.error(e)
+    const subscription = execute({ query })
+    for await (const result of subscription) {
+      console.log(result)
+    }
+  } catch (err) {
+    console.error(err)
   }
 })()
